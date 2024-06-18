@@ -9,8 +9,7 @@
 
 #define NUM_CL_ARGS 4              // number of command line arguments expected
 #define _POSIX_C_SOURCE 200809L    // a necessary macro
-#define IMPLEMENTS_IPV6
-#define MULTITHREADED
+#define MULTITHREADED 0            // toggle concurrency on/off
 
 /* Handles a connection with a client. Much of the work is done inside here. */
 void handle_connection(int connfd, char *wroot);
@@ -41,6 +40,12 @@ main(int argc, char **argv) {
     // Create a socket that will listen on the specified port
     listenfd = listen_on(port, protocol);
 
+#if !MULTITHREADED
+    while (1) {
+        connfd = accept_new_conn(listenfd);
+        handle_connection(connfd, wroot);
+    }
+#else
     // Used for concurrency
     fd_set allfds;             // Will keep track of all sockets the server knows of
     fd_set readablefds;        // Will store the set of sockets that're ready for reading (a subset of `allfds`)
@@ -82,6 +87,7 @@ main(int argc, char **argv) {
         }
         // LOOP FOREVER!
     }
+#endif
 
     // This line will actually never be reached
     return EXIT_SUCCESS;
